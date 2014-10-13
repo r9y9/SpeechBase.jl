@@ -1,9 +1,10 @@
 module SpeechBase
 
-export stft, istft, splitframes, blackman, hanning
+export stft, istft, splitframes, blackman, hanning, ss!, ss
 
 for fname in ["window",
-              "stft"]
+              "stft",
+              "ss"]
     include(string(fname, ".jl"))
 end
 

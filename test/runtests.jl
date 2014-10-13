@@ -1,5 +1,6 @@
 using SpeechBase
 using Base.Test
 
-# write your own tests here
-@test 1 == 1
+for fname in ["stft"]
+    include(string(fname, ".jl"))
+end

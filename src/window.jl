@@ -1,4 +1,5 @@
-# Blackman window
+# Window functions
+
 function blackman(n::Integer)
     const a0, a1, a2 = 0.42, 0.5, 0.08
     t = 2*pi/(n-1)

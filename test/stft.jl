@@ -26,7 +26,7 @@ function test_consistency_between_stft_and_istft()
                 
                 # check reconstruction error
                 err = norm(x-y)/norm(x)
-                @show (framelen, hopsize, winfunc) err
+                @show (framelen, hopsize, winfunc, err)
                 @test norm(x-y)/norm(x) < 0.05
             end
         end

@@ -14,7 +14,7 @@ function ss!(input, noise;
 end
 
 function ss(input, noise;
-             w::Union(Float64, Vector{Float64})=1.0,
+            w::Union(Float64, Vector{Float64})=1.0,
             floorrate::Float64=0.01)
     subtracted = copy(input)
     ss!(subtracted, noise, w=w, floorrate=floorrate)

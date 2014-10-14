@@ -19,27 +19,30 @@ function splitframes{T<:Number}(x::Vector{T},
     return frames
 end
 
-# stft performs Short-Time Fourier Transform (STFT).
+# stft performs the Short-Time Fourier Transform (STFT) for real signals.
 function stft{T<:Real}(x::Vector{T}, 
                        framelen::Int=1024,
                        hopsize::Int=int(framelen/2),
                        window=hanning(framelen))
     frames = splitframes(x, framelen, hopsize)
 
-    spectrogram = Array(Complex64, size(frames))
+    const freqbins = div(framelen, 2) + 1
+    spectrogram = Array(Complex64, freqbins, size(frames,2))
     for i=1:size(frames,2)
-        spectrogram[:,i] = fft(frames[:,i] .* window)
+        spectrogram[:,i] = rfft(frames[:,i] .* window)
     end
 
     return spectrogram
 end
 
-# istft peforms Inverse Short-Time Fourier Transform
+# istft peforms the Inverse STFT that recover the original real signal from
+#  STFT coefficients.
 function istft{T<:Complex}(spectrogram::Matrix{T},
                            framelen::Int=1024,
                            hopsize::Int=int(framelen/2),
                            window=hanning(framelen))
     const numframes = size(spectrogram, 2)
+
     expectedlen = framelen + (numframes-1)*hopsize
     reconstructed = zeros(expectedlen)
     windowsum = zeros(expectedlen)
@@ -48,7 +51,7 @@ function istft{T<:Complex}(spectrogram::Matrix{T},
     # Overlapping addition
     for i=1:numframes
         s, e = (i-1)*hopsize+1, (i-1)*hopsize+framelen
-        r = real(ifft(spectrogram[:,i]))
+        r = irfft(spectrogram[:,i], framelen)
         reconstructed[s:e] += r .* window
         windowsum[s:e] += windowsquare
     end

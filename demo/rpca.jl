@@ -6,15 +6,16 @@ using RPCA
 
 # Singing voice separation using Robust PCA
 
-x, fs = wavread("input.wav")
+filename = "titon_2_07_SNR5.wav"
+x, fs = wavread(filename)
 x = vec(x)
-
-# x = x[fs*0+1:fs*60]
-
+ 
 @show size(x)
 
-framelen = 4096
-Xᶜ = stft(x, framelen)
+framelen = 1024
+hopsize = div(framelen, 4)
+win = hanning(framelen)
+Xᶜ = stft(x, framelen, hopsize, win)
 
 X, P = abs(Xᶜ), angle(Xᶜ)
 @show size(X)
@@ -23,13 +24,28 @@ X, P = abs(Xᶜ), angle(Xᶜ)
 # A: row-rank matrix
 # S: sparse matrix
 elapsed_rpca = @elapsed begin
-    A, E = inexact_alm_rpca(X, verbose=true)
+    s = 1.0/sqrt(maximum(size(X)))
+    A, E = inexact_alm_rpca(X, verbose=true, error_tol=1.0e-7,
+                            sparseness=s)
 end
 println("Elapsed time in Robust PCA: $(elapsed_rpca) sec.")
 
-# back to time domain
-a = istft(A .* exp(im * P), framelen)
-e = istft(E .* exp(im * P), framelen)
+# Frequency masking
+const binary_mask = false
+if binary_mask
+    m = abs(E) .> abs(A)
+    Emask = zeros(size(E))
+    Emask[m] = X[m]
+    Amask = X - Emask
+else
+    Emask = E
+    Amask = A
+end
 
-wavwrite(float32(a), "input_A.wav", Fs=fs)
-wavwrite(float32(e), "input_E.wav", Fs=fs)
+# back to time domain
+a = istft(Amask .* exp(im * P), framelen, hopsize, win)
+e = istft(Emask .* exp(im * P), framelen, hopsize, win)
+
+name, suffix = splitext(filename)
+wavwrite(float16(a), string(name, "_A", suffix), Fs=fs)
+wavwrite(float16(e), string(name, "_E", suffix), Fs=fs)

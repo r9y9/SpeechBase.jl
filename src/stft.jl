@@ -35,8 +35,8 @@ function stft{T<:Real}(x::Vector{T},
     return spectrogram
 end
 
-# istft peforms the Inverse STFT that recover the original real signal from
-#  STFT coefficients.
+# istft peforms the Inverse STFT to recover the original signal from STFT 
+# coefficients.
 function istft{T<:Complex}(spectrogram::Matrix{T},
                            framelen::Int=1024,
                            hopsize::Int=int(framelen/2),

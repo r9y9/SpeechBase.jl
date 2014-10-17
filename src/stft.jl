@@ -22,7 +22,7 @@ end
 # stft performs the Short-Time Fourier Transform (STFT) for real signals.
 function stft{T<:Real}(x::Vector{T}, 
                        framelen::Int=1024,
-                       hopsize::Int=int(framelen/2),
+                       hopsize::Int=div(framelen,2),
                        window=hanning(framelen))
     frames = splitframes(x, framelen, hopsize)
 
@@ -39,7 +39,7 @@ end
 # coefficients.
 function istft{T<:Complex}(spectrogram::Matrix{T},
                            framelen::Int=1024,
-                           hopsize::Int=int(framelen/2),
+                           hopsize::Int=div(framelen,2),
                            window=hanning(framelen))
     const numframes = size(spectrogram, 2)
 

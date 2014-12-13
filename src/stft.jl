@@ -1,14 +1,14 @@
 # STFT/ISTFT
 
 # countframes returns the number of frames that will be processed.
-function countframes{T<:Number}(x::Vector{T}, framelen::Int, hopsize::Int)
+function countframes(x::AbstractVector, framelen::Int, hopsize::Int)
     div(length(x) - framelen, hopsize) + 1
 end
 
 # splitframes performs overlapping frame splitting.
-function splitframes{T<:Number}(x::Vector{T}, 
-                                framelen::Int=1024,
-                                hopsize::Int=framelen/2)
+function splitframes(x::AbstractVector,
+                     framelen::Int=1024,
+                     hopsize::Int=framelen/2)
     const N = countframes(x, framelen, hopsize)
     frames = Array(eltype(x), framelen, N)
 
@@ -20,10 +20,10 @@ function splitframes{T<:Number}(x::Vector{T},
 end
 
 # stft performs the Short-Time Fourier Transform (STFT) for real signals.
-function stft{T<:Real}(x::Vector{T}, 
-                       framelen::Int=1024,
-                       hopsize::Int=div(framelen,2),
-                       window=hanning(framelen))
+function stft(x::AbstractVector,
+              framelen::Int=1024,
+              hopsize::Int=div(framelen,2),
+              window=hanning(framelen))
     frames = splitframes(x, framelen, hopsize)
 
     const freqbins = div(framelen, 2) + 1

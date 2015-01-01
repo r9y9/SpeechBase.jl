@@ -14,14 +14,10 @@ export
   generate!,
   generate,
 
-  # Noise reduction (to be removed)
-  ss!,
-  ss
-
 for fname in ["window",
               "stft",
-              "excitation",
-              "ss"]
+              "excitation"
+              ]
     include(string(fname, ".jl"))
 end
 

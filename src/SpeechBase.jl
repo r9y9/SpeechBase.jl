@@ -12,7 +12,7 @@ export
   UniformExcitation,
   GaussExcitation,
   generate!,
-  generate,
+  generate
 
 for fname in ["window",
               "stft",

@@ -8,7 +8,7 @@ end
 # splitframes performs overlapping frame splitting.
 function splitframes(x::AbstractVector,
                      framelen::Int=1024,
-                     hopsize::Int=framelen/2)
+                     hopsize::Int=div(framelen,2))
     const N = countframes(x, framelen, hopsize)
     frames = Array(eltype(x), framelen, N)
 
@@ -35,7 +35,7 @@ function stft(x::AbstractVector,
     return spectrogram
 end
 
-# istft peforms the Inverse STFT to recover the original signal from STFT 
+# istft peforms the Inverse STFT to recover the original signal from STFT
 # coefficients.
 function istft{T<:Complex}(spectrogram::Matrix{T},
                            framelen::Int=1024,

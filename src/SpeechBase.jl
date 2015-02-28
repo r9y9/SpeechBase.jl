@@ -1,9 +1,14 @@
 module SpeechBase
 
+import DSP
+using DSP.Windows
+
+# re-export window functions
+eval(Expr(:export, names(DSP.Windows)...))
+
 export
+  countframes,
   splitframes,
-  blackman,
-  hanning,
   stft,
   istft,
 
@@ -13,8 +18,7 @@ export
   generate!,
   generate
 
-for fname in ["window",
-              "stft",
+for fname in ["stft",
               "excitation"
               ]
     include(string(fname, ".jl"))

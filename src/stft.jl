@@ -1,55 +1,55 @@
 # STFT/ISTFT
 
 # countframes returns the number of frames that will be processed.
-function countframes(x::AbstractVector, framelen::Int, hopsize::Int)
+function countframes(x::AbstractVector, framelen::Integer, hopsize::Integer)
     div(length(x) - framelen, hopsize) + 1
 end
 
 # splitframes performs overlapping frame splitting.
-function splitframes(x::AbstractVector,
-                     framelen::Int=1024,
-                     hopsize::Int=div(framelen,2))
-    const N = countframes(x, framelen, hopsize)
-    frames = Array(eltype(x), framelen, N)
+function splitframes{T}(x::AbstractVector{T},
+                        framelen::Integer=1024,
+                        hopsize::Integer=framelen>>1)
+    N = countframes(x, framelen, hopsize)
+    frames = Array(T, framelen, N)
 
-    for i=1:N
+    @inbounds for i = 1:N
         frames[:,i] = x[(i-1)*hopsize+1:(i-1)*hopsize+framelen]
     end
 
-    return frames
+    frames
 end
 
 # stft performs the Short-Time Fourier Transform (STFT) for real signals.
-function stft(x::AbstractVector,
-              framelen::Int=1024,
-              hopsize::Int=div(framelen,2),
-              window=hanning(framelen))
+function stft{T}(x::AbstractVector{T},
+                 framelen::Integer=1024,
+                 hopsize::Integer=framelen>>1,
+                 window=hanning(framelen))
     frames = splitframes(x, framelen, hopsize)
 
-    const freqbins = div(framelen, 2) + 1
-    spectrogram = Array(Complex64, freqbins, size(frames,2))
-    for i=1:size(frames,2)
+    freqbins = framelen>>1 + 1
+    spectrogram = Array(Complex{T}, freqbins, size(frames,2))
+    @inbounds for i = 1:size(frames,2)
         spectrogram[:,i] = rfft(frames[:,i] .* window)
     end
 
-    return spectrogram
+    spectrogram
 end
 
 # istft peforms the Inverse STFT to recover the original signal from STFT
 # coefficients.
-function istft{T<:Complex}(spectrogram::Matrix{T},
-                           framelen::Int=1024,
-                           hopsize::Int=div(framelen,2),
+function istft{T<:Complex}(spectrogram::AbstractMatrix{T},
+                           framelen::Integer=1024,
+                           hopsize::Integer=framelen>>1,
                            window=hanning(framelen))
-    const numframes = size(spectrogram, 2)
+    numframes = size(spectrogram, 2)
 
     expectedlen = framelen + (numframes-1)*hopsize
     reconstructed = zeros(expectedlen)
     windowsum = zeros(expectedlen)
-    const windowsquare = window .* window
+    windowsquare = window .* window
 
     # Overlapping addition
-    for i=1:numframes
+    @inbounds for i = 1:numframes
         s, e = (i-1)*hopsize+1, (i-1)*hopsize+framelen
         r = irfft(spectrogram[:,i], framelen)
         reconstructed[s:e] += r .* window
@@ -57,12 +57,12 @@ function istft{T<:Complex}(spectrogram::Matrix{T},
     end
 
     # Normalized by window
-    for i=1:endof(reconstructed)
+    @inbounds for i = 1:length(reconstructed)
         # avoid zero division
         if windowsum[i] > 1.0e-7
             reconstructed[i] /= windowsum[i]
         end
     end
 
-    return reconstructed
+    reconstructed
 end

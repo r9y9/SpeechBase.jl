@@ -37,13 +37,16 @@ end
 
 let
     println("Testing: excitation signal generation")
-    f0 = [zeros(100), 100*ones(100), zeros(100)]
+    srand(98765)
+    f0 = [zeros(100); 100*ones(100); zeros(100)]
     fs = 16000
     hopsize = 80
 
     e = generate(UniformExcitation(), f0, fs, hopsize)
     @test !any(isnan(e))
+    @test all(e .>= 0.0)
 
     e = generate(GaussExcitation(), f0, fs, hopsize)
     @test !any(isnan(e))
+    @test !all(e .>= 0.0)
 end

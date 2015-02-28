@@ -1,39 +1,61 @@
 abstract PulseExcitation
 
-type UniformExcitation <: PulseExcitation
+immutable UniformExcitation <: PulseExcitation
+end
+immutable GaussExcitation <: PulseExcitation
 end
 
-type GaussExcitation <: PulseExcitation
+abstract Segment
+immutable VoicedSegment <: Segment
 end
+immutable UnVoicedSegment <: Segment
+end
+const Voiced = VoicedSegment()
+const UnVoiced = UnVoicedSegment()
 
 type ExcitationState
     n::Int
 end
 
-function generate!(e::Union(UniformExcitation, GaussExcitation),
+# return if the segment is voiced or un-voiced given sucessive f0s
+function segment_type{T}(f01::T, f02::T)
+    ifelse(f01 == zero(T) || f02 == zero(T), UnVoiced, Voiced)
+end
+
+## Excitation genration for un-voiced segment
+
+function generate!(e::UniformExcitation,
+                   seg::UnVoicedSegment,
                    state::ExcitationState,
-                   f01::Float64, f02::Float64,
-                   fs::Real, hopsize::Int)
-    excite = Array(Float64, hopsize)
+                   f01, f02, fs, hopsize)
+    state.n = 0
+    rand(hopsize)
+end
 
-    # absent segment
-    if f01 == 0.0 || f02 == 0.0
-        state.n = 0
-        if isa(e, UniformExcitation)
-            return rand(hopsize)
-        elseif isa(e, GaussExcitation)
-            return randn(hopsize)
-        end
-    end
+function generate!(e::GaussExcitation,
+                   seg::UnVoicedSegment,
+                   state::ExcitationState,
+                   f01, f02, fs, hopsize)
+    state.n = 0
+    randn(hopsize)
+end
 
-    # generate f0-dependent excitation
+## Excitation genration for voiced segment
+
+# generate f0-dependent excitation
+function generate!{T}(e::Union(UniformExcitation, GaussExcitation),
+                      seg::VoicedSegment,
+                      state::ExcitationState,
+                      f01::T, f02::T, fs, hopsize)
+    excite = Array(T, hopsize)
+
     normalized_f01 = fs/f01
     normalized_f02 = fs/f02
     slope = (normalized_f02-normalized_f01) / hopsize
-    for i=1:hopsize
+    @inbounds for i = 1:hopsize
         interp = normalized_f01 + slope*(i-1)
         if state.n > int(interp)
-            @inbounds excite[i] = sqrt(interp)
+            excite[i] = sqrt(interp)
             state.n -= int(interp)
         else
             excite[i] = 0.0
@@ -44,19 +66,19 @@ function generate!(e::Union(UniformExcitation, GaussExcitation),
     excite
 end
 
-function generate(e::PulseExcitation, f0::Vector{Float64}, fs::Int,
-                  hopsize::Int)
-    excite = Array(Float64, hopsize*length(f0))
+function generate{T}(e::PulseExcitation, f0::Vector{T}, fs, hopsize)
+    excite = Array(T, hopsize*length(f0))
 
     state = ExcitationState(0)
     prev_f0 = f0[1]
-    for i=1:length(f0)
+    @inbounds for i=1:length(f0)
         if i > 1
-            @inbounds prev_f0 = f0[i-1]
+            prev_f0 = f0[i-1]
         end
-        excite_a_frame = generate!(e, state, prev_f0, f0[i], fs, hopsize)
-        for j=1:length(excite_a_frame)
-            @inbounds excite[(i-1)*hopsize+j] = excite_a_frame[j]
+        seg = segment_type(prev_f0, f0[i])
+        ex = generate!(e, seg, state, prev_f0, f0[i], fs, hopsize)
+        for j = 1:length(ex)
+            excite[(i-1)*hopsize+j] = ex[j]
         end
     end
 

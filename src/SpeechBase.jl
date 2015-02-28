@@ -1,7 +1,6 @@
 module SpeechBase
 
 export
-  # Basic functionality
   splitframes,
   blackman,
   hanning,

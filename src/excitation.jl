@@ -19,7 +19,11 @@ end
 
 # return if the segment is voiced or un-voiced given sucessive f0s
 function segment_type{T}(f01::T, f02::T)
-    ifelse(f01 == zero(T) || f02 == zero(T), UnVoiced, Voiced)
+    if f01 == zero(T) || f02 == zero(T)
+        return UnVoiced
+    else
+        return Voiced
+    end
 end
 
 ## Excitation genration for un-voiced segment
